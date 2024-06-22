@@ -1,0 +1,39 @@
+# This example demonstrates the ability to pass artifacts
+# from one step to the next.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: artifact-example-1-     # artificat example
+spec:
+  entrypoint: artifact-example    # entry point of artifact template
+  templates:
+  - name: artifact-example
+    steps:
+    - - name: generate-artifact   # call method create-artifact
+        template: create-artifact
+    - - name: consume-artifact    # call method print-message
+        template: print-message
+        arguments:
+          artifacts:
+          - name: message
+            from: "{{steps.generate-artifact.outputs.artifacts.hello-art}}" # value from method 'create-artifact' and output of this method
+
+  - name: create-artifact       # method for creating artifact in Minio
+    container:
+      image: docker/whalesay:latest
+      command: [sh, -c]
+      args: ["sleep 1; cowsay hello world | tee /tmp/hello_world.txt"]
+    outputs:
+      artifacts:
+      - name: hello-art
+        path: /tmp/hello_world.txt
+
+  - name: print-message       # method for printing message from artifact stored in Minio
+    inputs:
+      artifacts:
+      - name: message
+        path: /tmp/message    # path to read message from
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["cat /tmp/message"]

@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hello-world-    # name of the Workflow which generates unique ID after '-'
+spec:
+  entrypoint: jomin          # start point of this workflow hence 'whalesay'
+  templates:
+  - name: jomin              # name of the template in which it is the 'entrypoint'
+    container:
+      image: docker/whalesay    #container image from dockerhub
+      command: [cowsay]         # cowsay is a command that recieves string or have output from another command
+      args: ["hello world"]       # hence in this case, the string it recieves is 'hello world'
+      resources:                
+        limits:                 # limit the resources
+          memory: 32Mi
+          cpu: 100m

@@ -1,0 +1,33 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  config: |
+    artifactRepository:
+      s3:
+        bucket: my-bucket
+        endpoint: argo-artifacts-minio.default:9000
+        insecure: true
+        # accessKeySecret and secretKeySecret are secret selectors.
+        # It references the k8s secret named 'argo-artifacts'
+        # which was created during the minio helm install. The keys,
+        # 'accesskey' and 'secretkey', inside that secret are where the
+        # actual minio credentials are stored.
+        accessKeySecret:
+          name: argo-artifacts
+          key: accesskey
+        secretKeySecret:
+          name: argo-artifacts
+          key: secretkey
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"name":"workflow-controller-configmap","namespace":"argo"}}'
+  creationTimestamp: "2020-06-24T14:14:17Z"
+  name: workflow-controller-configmap
+  namespace: argo
+  resourceVersion: "31830084"
+  selfLink: /api/v1/namespaces/argo/configmaps/workflow-controller-configmap
+  uid: fd9f7f28-b624-11ea-9e2d-005056827ceb

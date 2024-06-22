@@ -1,0 +1,49 @@
+# This example illustrates how to iterate serially over a sequence using a counter.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata: # this workflow example demonstrated recurrsive loops
+  generateName: recursive-example-
+spec:
+  entrypoint: recurrsive
+  templates: # 3 templates: recurrsive, loop and counter-iteration
+    - name: recurrsive # this template is the entry point which it will start from here
+      steps:
+        - - name: recurse # it will recurse over 'loop' template
+            template: loop
+            arguments:
+              parameters: # parameters are assigned and declared to respective values
+                - name: counter
+                  value: 0
+                - name: limit
+                  value: 10
+    - name: loop # this template allows you to loop over counter and limits returned from 'recurrsive' templates
+      inputs:
+        parameters: # returning value from parameters set in 'recurrsive' templates
+          - name: counter 
+          - name: limit
+      steps: # steps to follow
+        - - name: iterate-counter 
+            template: counter-iteration # call 'counter-iteration' template to return a number
+            arguments:
+              parameters:
+                - name: counter
+                  value: "{{inputs.parameters.counter}}"
+        - - name: continue  # actual recursive loop happens in this step
+            template: loop  # in which it will go into 'loop' template (this template) if the result of 'counter-iteration' is less than the limit which is 10 according to 'recursive' template
+            when: "{{steps.iterate-counter.outputs.result}} < {{inputs.parameters.limit}}"
+            arguments:
+              parameters: # assigning variables to parameters returned from according templates
+                - name: counter # returned from 'counter-iteration'
+                  value: "{{steps.iterate-counter.outputs.result}}"
+                - name: limit # returned from 'recursive'
+                  value: "{{inputs.parameters.limit}}"
+
+    - name: counter-iteration
+      inputs:
+        parameters:
+          - name: counter
+      script: # script to return a number which adds 1 to counter which is returned from 'recurssive' template
+        image: python:alpine3.6
+        command: [python]
+        source: |
+          print({{inputs.parameters.counter}} + 1)

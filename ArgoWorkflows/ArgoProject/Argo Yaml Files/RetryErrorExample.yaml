@@ -1,0 +1,24 @@
+# This example demonstrates the use of retry back offs
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata: # this workflow example demonstrates a technique that we can use to retry failing function calls after given delay - 'backoff strategy'
+  generateName: retry-error-example-
+spec:
+  entrypoint: retry-backoff
+  templates: # 1 template: retry-backoff
+  - name: retry-backoff
+    retryStrategy:
+      limit: 10
+      retryPolicy: "Always" 
+      backoff:
+        duration: "1"      # retry this template after base duration of 1 second. this could also be '2m' (minutes) or '1h' (hour)
+        factor: 2           # factor to multiply the base duration  after each failed retry
+        maxDuration: "1m"  # maximum duration allowed for the backoff strategy
+    container:
+      image: python:alpine3.6
+      command: ["python", -c]
+      # fail with a 66% probability
+      args: ["import random; import sys; exit_code = random.choice([0, 1, 1]); sys.exit(exit_code)"]
+
+
+      # Note: If you see couple of reds in Argo UI, that is supposed to happen since it is retrying after failed attempts :)
