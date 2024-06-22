@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: loop-team-names-
+spec:
+  entrypoint: loop-example
+  templates:                    # two templates: loop-example and whalesay
+  - name: loop-example          # since loop-example is the entry point so this template goes first
+    steps:
+    - - name: print
+        template: whalesay
+        arguments:
+          parameters:
+          - name: message
+            value: "{{item}}"
+        withItems:              # invoke whalesay template once for each item in parallel
+        - Rocco            # item 1
+        - Alberto          # item 2
+        - Antonio         # item 3.....
+        - Max             
+        - Sean            
+        - Luca
+        - Jomin         # Where each item would create a pod instances
+
+  - name: whalesay
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["{{inputs.parameters.message}}"]

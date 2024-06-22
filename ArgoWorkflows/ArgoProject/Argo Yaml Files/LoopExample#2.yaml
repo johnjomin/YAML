@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: loops-example2-
+spec:
+  entrypoint: loop-map-example
+  templates:                  # there are 2 templates: loop-map-example and releasetags
+  - name: loop-map-example
+    steps:
+    - - name: test-linux
+        template: releasetags
+        arguments:
+          parameters:
+          - name: image
+            value: "{{item.image}}"
+          - name: tag
+            value: "{{item.tag}}"
+        withItems:          # dictionary looping?
+        - { image: 'debian', tag: '9.1' }       #item set 1
+        - { image: 'debian', tag: '8.9' }       #item set 2
+        - { image: 'alpine', tag: '3.6' }       #item set 3
+        - { image: 'ubuntu', tag: '17.10' }     #item set 4
+
+  - name: releasetags
+    inputs:
+      parameters:
+      - name: image
+      - name: tag
+    container:
+      image: "{{inputs.parameters.image}}:{{inputs.parameters.tag}}"
+      command: [cat]
+      args: [/etc/os-release]

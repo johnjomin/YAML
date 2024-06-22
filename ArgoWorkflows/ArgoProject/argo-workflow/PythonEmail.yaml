@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: jominemail
+  generateName: jominemail-
+spec:
+  entrypoint: sendemail
+  templates:
+    - name: sendemail
+      steps:
+        - - name: sendjominemail
+            template: sendjominemail
+        - - name: heads
+            template: heads
+            when: '{{steps.sendjominemail.outputs.result}} == heads'
+          - name: tails
+            template: tails
+            when: '{{steps.sendjominemail.outputs.result}} == tails'
+    - name: sendjominemail
+      script:
+        image: 'python:alpine3.6'
+        command:
+          - python
+        source: |
+          import smtplib
+          sender = 'jomin.john@grassvalley.com'
+          receivers = ['noreply@argo.local']
+          message = """From: From Person <from@fromdomain.com>
+          To: To Person <to@todomain.com>
+          Subject: SMTP e-mail test This is a test e-mail message.
+          """
+          try:
+             smtpObj = smtplib.SMTP('localhost')
+             smtpObj.sendmail(sender, receivers, message)         
+             print "Successfully sent email"
+          except SMTPException:
+             print "Error: unable to send email"
+    - name: heads
+      container:
+        image: 'alpine:3.6'
+        command:
+          - sh
+          - '-c'
+        args:
+          - echo "it was heads"
+    - name: tails
+      container:
+        image: 'alpine:3.6'
+        command:
+          - sh
+          - '-c'
+        args:
+          - echo "it was tails"

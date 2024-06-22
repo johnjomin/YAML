@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow  # this workflow introduces 'onExit' which uses the exit handler
+metadata: # almost like try catch statements
+  generateName: exit-example-
+spec:
+  entrypoint: intentional-fail
+  onExit: exit-handler                  # invoke exit-hander template at end of the workflow
+  templates: #5 templates: intentional-fail, exit-handler, send-email, celebrate, cry
+  # primary workflow template
+  - name: intentional-fail
+    container:  # this template is set to fail
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo intentional failure; exit 1"]
+
+  # Exit handler templates
+  # After the completion of the entrypoint template, the status of the
+  # workflow is made available in the global variable {{workflow.status}}.
+  # {{workflow.status}} will be one of: Succeeded, Failed, Error
+  - name: exit-handler  # as this template is called on 'onExit' handler
+    steps:
+    - - name: notify  # calls 'send-email' template
+        template: send-email
+      - name: celebrate # calls 'celebrate' template if the status of workflow succeeds.
+        template: celebrate
+        when: "{{workflow.status}} == Succeeded"
+      - name: cry
+        template: cry # calls 'cry' template if the status of workflow fails or not equals to succeeds
+        when: "{{workflow.status}} != Succeeded"
+
+  - name: send-email
+    container:  # echos workflow name and status of workflow
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo send e-mail: {{workflow.name}} {{workflow.status}}"]
+
+  - name: celebrate
+    container:  # echos celebrations
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo hooray!"]
+
+  - name: cry
+    container:  # echos crys
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo boohoo!"]

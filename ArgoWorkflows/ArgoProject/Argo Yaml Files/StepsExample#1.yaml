@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: steps-example-
+spec:
+  entrypoint: hello-template
+
+  # This workflow yaml contains two templates: hello-template and whalesay
+  templates:
+  - name: hello-template
+    # This template has a sequence of steps
+    steps:
+    - - name: hello1            # Hello1 runs first
+        template: whalesay
+        arguments:
+          parameters:
+          - name: message
+            value: "I am from Hello 1"
+    - - name: hello2           # Hello2 runs after Hello1
+        template: whalesay
+        arguments:
+          parameters:
+          - name: message
+            value: "I am from Hello 2"
+      - name: hello3           # Also Hello 3 and Hello 2 runs at parallel level
+        template: whalesay
+        arguments:
+          parameters:
+          - name: message
+            value: "I am from Hello 3"
+
+  # This is the same template as from the previous example
+  - name: whalesay
+    inputs:
+      parameters:
+      - name: message
+    container:                # Whereas this template returns messages from each steps
+      image: docker/whalesay
+      command: [cowsay]
+      args: ["{{inputs.parameters.message}}"]

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-example-1-     # workflow name with unique id
+spec:
+  entrypoint: whalesay      # entry point of 'whalesay' template
+  arguments:
+    parameters:
+    - name: message         # declaring variable 'message' to value 'hello world'
+      value: hello jomin
+
+  templates:
+  - name: whalesay
+    inputs:
+      parameters:
+      - name: message       # parameter declaration for this template
+    container:
+      image: docker/whalesay
+      command: [cowsay]
+      args: ["{{inputs.parameters.message}}"] #string variable is under inputs->parameters->message which should be 'hello jomin'

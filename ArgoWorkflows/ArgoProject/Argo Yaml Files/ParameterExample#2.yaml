@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-example-2-
+spec:
+  entrypoint: templateA   # entry point is templateA not templateB
+  arguments:
+    parameters:           # global variable declarations
+    - name: message       
+      value: hello sean  # var message = "hello sean"
+    - name: log-level
+      value: INFO         #var log-level = "INFO"
+
+  templates:
+  - name: templateA
+    inputs:
+      parameters:
+      - name: message
+      - name: log-level      # parameter declaration from global variable x2
+    container:
+      image: docker/whalesay
+      env:
+      - name: LOG_LEVEL
+        value: "{{workflow.parameters.log-level}}"
+      command: [cowsay]                       # multiple command string with either variable message or log-level
+      args: ["{{inputs.parameters.message}}"]
+      command: [cowsay]
+      args: ["{{inputs.parameters.log-level}}"]

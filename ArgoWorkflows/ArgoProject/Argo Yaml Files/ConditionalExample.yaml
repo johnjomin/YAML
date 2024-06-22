@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: conditional-example-
+spec:
+  entrypoint: coinflip
+  templates:  # 4 templates: coinflip flip-coin, heads and tails
+  - name: coinflip # the entry point is this template
+    steps:
+    # flip a coin
+    - - name: flip-coin # flips a coin from 'flip-coin' template which is a python script
+        template: flip-coin
+    # evaluate the result in parallel
+    - - name: heads # conditional steps if it is heads => "when"
+        template: heads                 # call heads template if "heads"
+        when: "{{steps.flip-coin.outputs.result}} == heads"
+      - name: tails # conditional steps if it is tails => "when"
+        template: tails                 # call tails template if "tails"
+        when: "{{steps.flip-coin.outputs.result}} == tails"
+
+  # Return heads or tails based on a random number
+  - name: flip-coin
+    script:
+      image: python:alpine3.6
+      command: [python] # result of python script is returned either heads or tails is returned back to 'coinflip' template
+      source: |
+        import random
+        result = "heads" if random.randint(0,1) == 0 else "tails"
+        print(result)
+
+  - name: heads
+    container:  # prints a message if it was heads in 'flip-coin' template which this template/method was called in 'coinflip' template
+      image: alpine:3.6
+      command: [sh, -c]
+      args: ["echo \"it was heads\""]
+
+  - name: tails
+    container: # prints a message if it was tails in 'flip-coin' template which this template/method was called in 'coinflip' template
+      image: alpine:3.6
+      command: [sh, -c]
+      args: ["echo \"it was tails\""]
